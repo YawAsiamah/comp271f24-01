@@ -1,97 +1,172 @@
+import java.util.ArrayList;
+
+/**
+ * Represents a line of train stations with methods to add stations and display them.
+ */
 public class TrainLine {
+    // Properties
+    private String name;  // Train line's name
+    private TrainStation head;  // First station
+    private TrainStation tail;  // Last station
+    private int numberOfStations;  // Count of stations
 
-    /** The name of the trainline */
-    private String name;
-    /** Points to the first station in the trainline */
-    private TrainStation head;
-    /** Points to the last station in the trainline */
-    private TrainStation tail;
-    /** Keeps a running tally of train stations in the trainline */
-    private int numberOfStations;
+    // Constants
+    private static final int MAX_LINE_LENGTH = 80;
+    private static final int MAX_VERTICAL_SEGMENTS = 5;
+    private static final String ARROW = " --> ";
 
-    /** Full constructor */
-    public TrainLine(String name, TrainStation head) {
-        this.name = name;
-        this.head = head;
-        this.numberOfStations = 0;
-        if (this.head != null) {
-            // If head is not null, there is one station in the line
-            this.numberOfStations = 1;
-        }
-        // At initialization head and tail point to the same station even if null
-        this.tail = null;
-    } // full constructor
-
-    /** Basic constructor */
+    // Constructor
     public TrainLine(String name) {
-        this(name, null);
-    } // basic constructor
+        this.name = name;
+        this.head = null;
+        this.tail = null;
+        this.numberOfStations = 0;
+    }
 
-    /**
-     * Creates a new station with the given name and adds it to the end of the line.
-     */
-    public void add(String name) {
-        // Create the new station to add
-        TrainStation newStation = new TrainStation(name);
-        // Determine where to place the new station
-        if (this.head == null) {
-            // Trainline is empty, make new station the head of the line
-            this.head = newStation;
+    // Adds a station to the end of the train line
+    public void add(String stationName) {
+        TrainStation newStation = new TrainStation(stationName);
+        if (head == null) {
+            head = newStation;
         } else {
-            // When there is a head station already, add the new station after the last
-            // station in the line.
-            this.tail.setNext(newStation);
+            tail.setNext(newStation);
         }
-        // The new station becomes the tail station of the line
-        this.tail = newStation;
-        // Update station count
-        this.numberOfStations++;
-    } // method add
+        tail = newStation;
+        numberOfStations++;
+    }
 
-    /** Returns the number of stations in the line >= 0 */
-    public int getNumberOfStations() {
-        return numberOfStations;
-    } // method getNumberOfStations
+    // Generates a string of the train line in a snake-like pattern
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("         1         2         3         4         5         6         7         8\n");
+        sb.append("12345678901234567890123456789012345678901234567890123456789012345678901234567890\n\n");
 
-    public TrainStation remove(int position) {
-        TrainStation removedStation = null;
-        if (position >= 1 && position <= this.numberOfStations) {
-            // Commence safe operations
-            if (position == 1) {
-                // Remove head
-                removedStation = this.head;
-                this.head = this.head.getNext();
+        TrainStation current = head;
+        boolean horizontal = true;
+        boolean downward = true;
+
+        while (current != null) {
+            if (horizontal) {
+                current = printHorizontal(current, sb, downward);
+                horizontal = false;
             } else {
-                // Find the station prior to the one to be removed
-                TrainStation cursor = this.head;
-                for (int i = 1; i < position-1; i++) {
-                    cursor = cursor.getNext();
-                }
-                // cursor should be at the prior station
-                if (cursor.getNext() == this.tail) {
-                    this.tail = cursor;
-                }
-                removedStation = cursor.getNext();
-                cursor.setNext(cursor.getNext().getNext());
+                current = printVertical(current, sb, downward);
+                downward = !downward;
+                horizontal = true;
             }
-            this.numberOfStations--;
-            removedStation.setNext(null);
         }
-        return removedStation;
+
+        sb.append("                                 null\n");
+        return sb.toString();
+    }
+
+    // Prints horizontal segment and returns next station
+    private TrainStation printHorizontal(TrainStation start, StringBuilder sb, boolean leftToRight) {
+        StringBuilder line = new StringBuilder();
+        int charCount = 0;
+
+        TrainStation current = start;
+        while (current != null && charCount < MAX_LINE_LENGTH) {
+            String stationName = current.getName();
+            int length = stationName.length() + (current.getNext() != null ? ARROW.length() : 0);
+            if (charCount + length > MAX_LINE_LENGTH) break;
+
+            line.append(leftToRight ? stationName + ARROW : ARROW + stationName);
+            charCount += length;
+            current = current.getNext();
+        }
+
+        sb.append(leftToRight ? line + " --+\n" : " +--" + line + "\n");
+        return current;
+    }
+
+    // Prints vertical segment and returns next station
+    private TrainStation printVertical(TrainStation start, StringBuilder sb, boolean downward) {
+        TrainStation current = start;
+        for (int i = 0; i < MAX_VERTICAL_SEGMENTS && current != null; i++) {
+            sb.append(downward ? "      +-- " : "                                 |\n      +-- ")
+              .append(current.getName()).append("\n");
+            current = current.getNext();
+        }
+        return current;
     }
 
     public static void main(String[] args) {
-        // A few station names
-        String[] stationNames = { "Howard", "Jarvis", "Morse",
-                "Loyola", "Granville", "Thorndale" };
-        // A populated trainline
         TrainLine redLineSB = new TrainLine("Red Line SB");
+        String[] stationNames = {
+            "Howard", "Jarvis", "Morse", "Loyola", "Granville", "Thorndale",
+            "Bryn Mawr", "Argyle", "Wilson", "Sheridan", "Addison", 
+            "Belmont", "Fullerton", "North/Clyburn", "Clark/Division", 
+            "Chicago", "Roosevelt", "Harrison", "Jackson", "Monroe", 
+            "Cermak-Chinatown", "Sox-35th", "47th", "Garfield", "63rd", 
+            "69th", "79th", "87th", "95th/Dan Ryan"
+        };
+
         for (String station : stationNames) {
             redLineSB.add(station);
         }
-        // An empty trainline
-        prep_TrainLine brownLineSB = new prep_TrainLine("Brown Line SB");
-        // A random station name
-        String randomName = "Oak Park";
-    } // method main
-} // class TrainLine
+
+        System.out.println(redLineSB);
+    }
+}
+
+/**
+ * Represents a train station in the train line.
+ */
+class TrainStation {
+    private String name;  // Station name
+    private TrainStation next;  // Next station
+
+    public TrainStation(String name) {
+        this.name = name;
+        this.next = null;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public TrainStation getNext() {
+        return this.next;
+    }
+
+    public void setNext(TrainStation next) {
+        this.next = next;
+    }
+}
+
+/*
+ * Pseudo Code:
+ * 
+ * 1. Create TrainLine with a name.
+ *    - Initialize name, head, tail, and numberOfStations.
+ * 
+ * 2. Add stations using `add()`:
+ *    - Create a new TrainStation.
+ *    - If head is null, set new station as head.
+ *    - Otherwise, link the new station to the current tail.
+ *    - Update tail to the new station.
+ *    - Increase the count of stations.
+ * 
+ * 3. Generate train line display in `toString()`:
+ *    - Print headers.
+ *    - Loop through stations:
+ *      - If horizontal, call `printHorizontal()`.
+ *      - If vertical, call `printVertical()`.
+ *      - Toggle direction after each segment.
+ *    - End with "null".
+ * 
+ * 4. PrintHorizontal():
+ *    - Print stations in a line until reaching max length.
+ *    - Return next station.
+ * 
+ * 5. PrintVertical():
+ *    - Print stations vertically up or down.
+ *    - Return next station.
+ * 
+ * 6. Main:
+ *    - Create a TrainLine.
+ *    - Add stations.
+ *    - Print the train line in snake-like format.
+ */
